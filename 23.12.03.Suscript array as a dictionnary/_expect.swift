@@ -64,7 +64,7 @@ extension Wrapper where T == Bool {
 }
 
 func equalTo<T>(_ object: T) -> AssertOperator<T> {.equal(object)}
-func differenFrom<T>(_ object: T) -> AssertOperator<T> {.different(object)}
+func differentFrom<T>(_ object: T) -> AssertOperator<T> {.different(object)}
 
 //expect("hello world").toBe(equalTo("hello world"))
 //expect(1).toBe(equalTo(2))
