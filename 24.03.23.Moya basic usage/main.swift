@@ -54,12 +54,6 @@ extension MyApi: TargetType {
 			"Accept"      : v
 		]
 	}
-	
-	var authorizationType: AuthorizationType? {
-		switch self {
-		default: return .bearer
-		}
-	}
 }
 
 protocol MyApiProtocol: AnyObject {
@@ -115,7 +109,7 @@ extension Result where Success == Response {
 let provider = Provider<MyApi>(session: .shared, plugins: [])
 
 provider.getAddress { result in
-	guard let data = result.data else { print("you must start json-server") ; return }
+	guard let data = result.data else { print("Start json-server") ; return }
 	dump(data)
 }
 

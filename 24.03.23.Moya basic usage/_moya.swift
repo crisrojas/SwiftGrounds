@@ -14,13 +14,6 @@ enum Task {
 	case requestParameters(params: [String: Any])
 }
 
-enum AuthorizationType {
-	case basic
-	case bearer
-	case custom(String)
-}
-
-
 protocol TargetType {
 	var baseURL: URL {get}
 	var path: String {get}
@@ -28,7 +21,6 @@ protocol TargetType {
 	var sampleData: Data {get}
 	var task: Task {get}
 	var headers: [String: String]? {get}
-	var authorizationType: AuthorizationType? {get}
 }
 
 

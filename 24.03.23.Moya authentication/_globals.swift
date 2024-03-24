@@ -5,11 +5,17 @@ final class Storage {
 	func saveTokens(_ authToken: AuthToken) {
 		// you may want to encrypt those values
 		refreshToken = authToken.refreshToken
-		accessToken =  authToken.accessToken
+		accessToken  = authToken.accessToken
+	}
+
+	func clearTokens() {
+		refreshToken = nil
+		accessToken  = nil
 	}
 }
 
 final class Settings {
+	var isLoggedIn = false
 	var refreshingToken = false
 }
 

@@ -1,7 +1,12 @@
 import Foundation
 
+func dp(_ any: Any) {
+	#if DEBUG
+	print(any)
+	#endif
+}
 
-enum Method {
+enum Method: String {
 	case get, post, put, patch, delete
 }
 
@@ -14,12 +19,6 @@ enum Task {
 	case requestParameters(params: [String: Any])
 }
 
-enum AuthorizationType {
-	case basic
-	case bearer
-	case custom(String)
-}
-
 
 protocol TargetType {
 	var baseURL: URL {get}
@@ -28,7 +27,24 @@ protocol TargetType {
 	var sampleData: Data {get}
 	var task: Task {get}
 	var headers: [String: String]? {get}
-	var authorizationType: AuthorizationType? {get}
+}
+
+extension TargetType {
+	func makeRequest() -> URLRequest {
+		let url = baseURL.appendingPathComponent(path)
+		var request = URLRequest(url: url)
+		request.httpMethod = method.rawValue
+		
+		switch task {
+			case .requestData(let d): 
+				request.httpBody = d
+			case .requestJSONEncodable(let t):
+				let data = try? JSONEncoder().encode(t)
+				request.httpBody = data
+			default: break
+		}
+		return request
+	}
 }
 
 
@@ -57,7 +73,9 @@ struct Response {
 }
 
 
-protocol PluginType {}
+protocol PluginType {
+	func prepare(_ request: URLRequest, target: TargetType) -> URLRequest
+}
 
 final class Provider<Target: TargetType> {
 	let session: URLSession
@@ -68,11 +86,12 @@ final class Provider<Target: TargetType> {
 		self.plugins = plugins
 	}
 	
-	func request(_ target: Target, onDone: @escaping (Result<Response, Error>) -> Void) { 
-		let url = target.baseURL.appendingPathComponent(target.path)
-		let task = session.dataTask(with: url) { data, response, error in
+	func request(_ target: Target, onDone: @escaping (Result<Response, Error>) -> Void) {
+		
+		let request = makeRequest(with: target)
+		let task = session.dataTask(with: request) { data, response, error in
 			guard let data = data, error == nil else {
-				onDone(.failure(NSError(domain: "Error al obtener los datos: \(error?.localizedDescription ?? "Unknown error")", code: 0)))
+				onDone(.failure(NSError(domain: "\(error?.localizedDescription ?? "Unknown error")", code: 0)))
 				return
 			}
 			
@@ -81,5 +100,47 @@ final class Provider<Target: TargetType> {
 		}	
 		
 		task.resume()
+	}
+	
+	func makeRequest(with target: Target) -> URLRequest { 
+		plugins.reduce(target.makeRequest()) { request, plugin in
+			plugin.prepare(request, target: target)
+		}
+	}
+}
+
+// AUTH
+
+enum AuthorizationType {
+	case basic
+	case bearer
+	case custom(String)
+	
+	var value: String {
+		switch self {
+			case .basic: return "Basic"
+			case .bearer: return "Bearer"
+			case .custom(let customValue): return customValue
+		}
+	}
+}
+
+
+protocol AccessTokenAuthorizable {
+	var authorizationType: AuthorizationType? {get}
+}
+
+struct AccessTokenPlugin: PluginType {
+	let tokenClosure: (AuthorizationType) -> String
+	init(tokenClosure: @escaping (AuthorizationType) -> String) {
+		self.tokenClosure = tokenClosure
+	}
+	
+	func prepare(_ request: URLRequest, target: TargetType) -> URLRequest {
+		guard let type = (target as? AccessTokenAuthorizable)?.authorizationType else { return request }
+		var request = request
+		let authValue = type.value + " " + tokenClosure(type)
+		request.addValue(authValue, forHTTPHeaderField: "Authorization")
+		return request
 	}
 }
