@@ -1,4 +1,4 @@
-// #reactivity #oservable #swiftui
+// #reactivity #oservable #swiftui #uikit
 import Foundation
 
 // This is an attempt to come up with a similar reactivity pattern to the one use it on SwiftUI.
@@ -58,28 +58,35 @@ extension UILabel {
 - Two way binding...
 - Computed variables
 */
+
+final class SomeViewController {
+    @State var state = Model()
+    lazy var label = UILabel()
+    
+    func setupBindings() {
+        label.bindTo(\.value, on: _state)
+    }
+}
+
+extension SomeViewController {
+    struct Model {
+        var value = "some value"
+    }
+}
+
 describe("State binding works") {
     
-    given("a label and stateful object") {
-        struct Object {
-            var value = "some value"
-        }
-        
-        var label = UILabel()
-        var object = State(Object())
-        
-        when("binding label with a value of the object") {
-            label.bindTo(\.value, on: object)
-            
-            and("updating object value") {
-                object.wrappedValue.value = "new value"
-                
+    given("A viewcontroller with a label and a state model") {
+        let vc = SomeViewController()
+        when("binding label to state changes") {
+            vc.setupBindings()
+            and("model is updated") {
+                vc.state.value = "new value"
                 then("label text is updated") {
-                    expect(label.text).toBe(equalTo("new value"))
+                    expect(vc.label.text).toBe(equalTo("new value"))
                 }
             }
         }
-        
     }
 }
 

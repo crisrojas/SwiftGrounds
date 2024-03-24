@@ -94,7 +94,6 @@ extension Provider where Target == MyApi {
 							: .success(decoded!)
 						)
 					default: onDone(.failure(anyError()))
-						
 				}
 				
 				case .failure(_): break
@@ -111,10 +110,10 @@ extension Provider where Target == MyApi {
 		
 		// If we're refresing the token...
 		if settings.refreshingToken {
-			// We wait till is refresh, then we retry
+			// We wait till is refreshed, then we retry
 			// We should have and observing mecanism here
-			// so we can trigger the code once the refreshing 
-			// ends
+			// so we can trigger the code once the refreshing is set to false
+			// @todo: wonder if there's something wrong of doing this
 			if !settings.refreshingToken {
 				requestWithAuth(target, onDone: onDone)
 			}
@@ -130,10 +129,10 @@ extension Provider where Target == MyApi {
 			
 			refreshToken(token) { [weak self] result in
 				guard let self else {return}
+					settings.refreshingToken = false
 					switch result {
 					case .success(let authToken):
 						storage.saveTokens(authToken)
-						settings.refreshingToken = false
 						self.requestWithAuth(target, onDone: onDone)
 					case .failure:
 						self.logout()
