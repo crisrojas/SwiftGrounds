@@ -185,6 +185,7 @@ func case1() {
 
 /*
 	Client performs a valid login, then tries to fetch a resource
+	![](/assets/login.jpeg)
 */
 func case2() {
 	
@@ -209,6 +210,7 @@ func case2() {
 /*
 	Client starts request with an old accessToken, and 
 	a valid refreshToken
+	![](/assets/retry-with-valid-refreshtoken.jpeg)
 */
 func case3() {
 	storage.accessToken = "old/invalid access token"

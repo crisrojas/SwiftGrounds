@@ -3,20 +3,14 @@ import Foundation
 // The goal of this playground is to create a suscript that allows consume an array as it was a dictionnary
 // This gives us dictionnary api ergonomics for manipulating the array contents
 //
-// For example, appending an itme would be as easy as doing:
+// For example, deleting an item would be as easy as doing:
 //
-// array[item.id] = item
-//
-// And deleting it:
-//
-// array[item.id] = nil // deletes item
+// `array[item.id] = nil`
 
-// We will need to conform to Identifiable
+// Our item would need to conform to Identifiable
 extension Array where Element: Identifiable {
     subscript(id: Element.ID) -> Element? {
-        get {
-            return first { $0.id == id }
-        }
+        get { first { $0.id == id } }
         set(newValue) {
             if let index = firstIndex(where: { $0.id == id }) {
                 if let newValue = newValue {

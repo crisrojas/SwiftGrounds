@@ -1,4 +1,5 @@
-// #reactivity #oservable #swiftui #uikit
+// 24.03.19
+// #reactivity #oservable #swiftui #uikit #mvc #architecture
 import Foundation
 
 // This is an attempt to come up with a similar reactivity pattern to the one use it on SwiftUI.

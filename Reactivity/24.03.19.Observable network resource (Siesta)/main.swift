@@ -1,6 +1,17 @@
-// #reactivity #uikit
+// 24.03.19
+// #reactivity #uikit #networking #architecture
 
-enum ViewState<T> {
+// The goal of this mini playground is to better understand the principles
+// behind [Siesta](https://github.com/bustoutsolutions/siesta).
+
+// Note that even though this pattern comes from a networking lib,
+// This could be use to implemnent observable persistence on UIKit
+// with solutions that, contrary to CoreData, don't support it out of the box (SQLite, Codable to filedisk, etc...)
+
+// MARK: - Resource state
+// A remote resource has an state that determines wether it has been
+// fetched before:
+enum ResourceState<T> {
     case idle
     case loading
     case success(T)
@@ -44,44 +55,55 @@ enum ViewState<T> {
     }
 }
 
-typealias Outcome<T> = Result<T, Error>
-typealias OutcomeCompletion<T> = (Outcome<T>) -> Void
-
+// MARK: - Resource implementation
+// We have a generic deserialization object
 enum JSON {case empty}
+
+// A resource represents a collection of entities from the data api:
 final class Resource {
     
-    // This could use a Codable object instead of JSON:
+    // A resource could use a Codable object instead of JSON:
     // `final class Resource<T: Codable> { ...  }`
     // `state: ViewState<T>`
-    // But for demo purposes, lets use a basic JSON structure
-    var state: ViewState<JSON> = .idle {
+    // But for the sake of simplicity, lets stick with our JSON entity.
+    var state: ResourceState<JSON> = .idle {
         didSet { callbacks.forEach { $0(state) } }
     }
     
-    var callbacks = [(ViewState<JSON>)->Void]()
+    var callbacks = [(ResourceState<JSON>)->Void]()
     let path: String
     init(_ p: String) { path = p }
     
+    // A resource knows how to retrieve, create, modify and delete itself
+    // Thus it has a method for each HTTP verb
     func fetch() {
         state = .loading
-        // Here would go the async fetch (dispatchQueue, combine, async/await etc...)
+        
+        // Here you would use URLSession to retrieve the data 
+        // using the resource url...
+        // `let url = baseURL.appendingPathComponent(path)`
         state.update(from: .success(.empty))
     }
-    // A resource represents a collection of entities from the data api
-    // It should contain generic methods associated to the HTTP verbs:
-    func post() {}
-    func delete() {}
-    func patch() {}
     
-    func onChange(_ completion: @escaping (ViewState<JSON>)->Void) { 
+
+    func post()   {/* Use URLSession*/}
+    func patch()  {/* Use URLSession*/}
+    func delete() {/* Use URLSession*/}
+    
+    // API for observing resource changes
+    func onChange(_ completion: @escaping (ResourceState<JSON>)->Void) { 
         callbacks.append(completion)
     }
 }
 
-extension Resource {
+// We have our resources declared as globals
+// so everyone can observe them:
+final class API {
+    private init() 
     static var profiles = Resource("/profiles")
 }
 
+// MARK: - UI usage
 class View {
     var isHidden = false
 }
@@ -116,18 +138,18 @@ final class ProfilesViewController {
     
     func setInitialStates() {
         profilesView.isHidden = true
-        indicator.isHidden   = true
-        errorView.isHidden   = true
+        indicator.isHidden    = true
+        errorView.isHidden    = true
     }
     
     func startObservingResource() {
         resource.onChange(updateUI)
     }
     
-    func updateUI(state: ViewState<JSON>) { 
-        indicator.isVisible   = state.isLoading
+    func updateUI(state: ResourceState<JSON>) { 
+        indicator.isVisible    = state.isLoading
         profilesView.isVisible = state.isSuccess
-        errorView.isVisible   = state.isError
+        errorView.isVisible    = state.isError
         profilesView.update(with: state.data)
     }
     
@@ -146,11 +168,7 @@ final class AnotherViewController {
         label.text = "No resource found"
     }
     
-    func viewDidLoad() {
-        resource.onChange(updateUI)
-    }
-    
-    func updateUI(state: ViewState<JSON>) {
+    func updateUI(state: ResourceState<JSON>) {
         if state.isSuccess {
             label.text = "Resource has been fetched!"
         }
@@ -159,7 +177,7 @@ final class AnotherViewController {
 
 protocol ResourceObserver {
     var resource: Resource { get set }
-    func updateUI(state: ViewState<JSON>)
+    func updateUI(state: ResourceState<JSON>)
     func setInitialStates()
 }
 
@@ -185,7 +203,7 @@ describe("Test resource observation works") {
             profilesVC.startObservingResource()
             anotherVC.startObservingResource()
             
-            and("they have a default initial states") {
+            and("they have default initial states") {
                 
                 anotherVC.setInitialStates()
                 profilesVC.setInitialStates()
@@ -193,7 +211,7 @@ describe("Test resource observation works") {
                 expect(profilesVC.profilesView.isHidden).toBe(true)
                 expect(anotherVC.label.text).toBe(equalTo("No resource found"))
                 
-                when("one of them fetches/updates the resource") {
+                when("one of them fetches the resource") {
                     profilesVC.fetchProfiles()
                     
                     then("both view controllers states are updated") {
