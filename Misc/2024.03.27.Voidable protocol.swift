@@ -108,3 +108,7 @@ print(count == 28)
 // Greet
 example.greet = { "hello \($0)" }
 print(example.greet!("cristian"))
+
+/*
+	Maybe I should check this https://github.com/onmyway133/EasyClosure/tree/master for ideas of a better implementation
+*/

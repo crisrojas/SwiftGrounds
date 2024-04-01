@@ -7,20 +7,17 @@
 
 import Foundation
 
-/*
-keywords: v-labs menuz
-#snippets #devgrounds
-*/
+/* #v-labs #misc */
 import Foundation
 
-/// Tenemos una lista de la compra cuyos items pueden estar asociados o no a un ingrediente.
+// We have a shopping list whose items may be or not associated with an ingredient
 struct ShoppingListItem {
     let name: String
     let ingredientId: UUID?
     let isChecked: Bool
 }
 
-/// El ingrediente siempre está asociado a una categoría
+// The ingredient is always associatd to a category:
 struct Ingredient {
     let id = UUID()
     let name: String
@@ -33,30 +30,18 @@ struct Category {
 }
 
 
-/// En nuestra lista, queremos msotrar los items en secciones,
-/// agrupados por categorías:
+// In our ui, we want to show the items grouped by those categories, so we consume a model like following:
 struct ShoppingListSection {
     let name: String
     let items: [ShoppingListItem]
 }
 
 
-/// Modelo de datos:
-var categories  = [Category(name: "Carnes"), Category(name: "Lácteos"), Category(name: "Legumbres")]
-var ingredients = [
-    Ingredient(name: "Pollo"   , categoryId: categories[0].id),
-    Ingredient(name: "Yogurt"  , categoryId: categories[1].id),
-    Ingredient(name: "Queso"   , categoryId: categories[1].id),
-    Ingredient(name: "Frijoles", categoryId: categories[2].id)
-]
-
-var shoppingListItems = ingredients.map { ShoppingListItem(name: $0.name, ingredientId: $0.id, isChecked: false) }
-
-
-/// Conformance to hashable for grouping in dictionnary
+// We can create such an item by leveraging a native dictionnary init.
+// We'll need hashable conformance:
 extension Category: Hashable {}
 
-/// Get categories of ingredient from its id. Return unknown category if nothing is found
+// And a method that gets the categories of an ingredient by id:
 fileprivate func getCategoryFromIngredient(id: UUID?) -> Category {
     // Must return same "unknown" symbol in both cases: guard and return coalescing
     let unknown = Category(name: "Unknown")
@@ -71,12 +56,15 @@ fileprivate func getCategoryFromIngredient(id: UUID?) -> Category {
     return category ?? unknown
 }
 
-/// Grouping
-let sections = Dictionary(
+// Grouping: Returns a dictionnary of [Category: [ShoppingListItem])
+let dict = Dictionary(
     grouping: shoppingListItems,
     by: { getCategoryFromIngredient(id: $0.ingredientId) }
-).map { category, items in
+)
+
+// Then we can map it to the desired model:
+let sections = dict.map { category, items in
     ShoppingListSection(name: category.name, items: items)
 }
 
-//dump(sections)
+dump(sections.map { (name: $0.name, items: $0.items.map { $0.name }) })

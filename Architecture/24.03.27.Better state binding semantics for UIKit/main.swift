@@ -83,12 +83,7 @@ extension UIView {
 
 extension ViewState {
     var isLoading: Bool { self == .loading }
-    var isSuccess: Bool {
-        switch self {
-            case .success: return true
-            default: return false
-        }
-    }
+    var isSuccess: Bool { data != nil }
     
     var isError: Bool {
         switch self {

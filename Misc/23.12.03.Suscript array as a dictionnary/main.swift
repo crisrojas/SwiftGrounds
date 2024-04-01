@@ -25,6 +25,35 @@ extension Array where Element: Identifiable {
     }
 }
 
+// Ejemplos de uso:
+struct Todo: Identifiable {
+    let id = UUID()
+    var description: String
+    var isChecked = false
+    
+    init(_ description: String) {
+        self.description = description
+    }
+}
+
+final class TodoResource: ObservableObject {
+    
+    @Published var data = [Todo]()
+    
+    // Without 😫
+    func check(_ id: UUID) {
+        if let index = data.firstIndex(where: { $0.id == id }) {
+            data[index].isChecked.toggle()
+        }
+    }
+    
+    // With 😎
+    func check_b(_ id: UUID) {
+        data[id]?.isChecked.toggle()
+    }
+}
+
+    
 struct User: Identifiable, Equatable {
     var id = UUID()
     var firstName: String
